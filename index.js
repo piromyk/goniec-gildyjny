@@ -11,26 +11,21 @@ const INTERVAL = ((5 * 60) + 34) * 60 * 1000;
 
 // Pierwszy znany spawn
 const FIRST_EVENT = new Date(
-    "2026-07-11T20:55:00+02:00"
+    "2026-07-12T00:51:00+02:00"
 ).getTime();
 
 async function sendMessage(text) {
-
     try {
-
-        const channel =
-            await client.channels.fetch(
-                process.env.CHANNEL_ID
-            );
+        const channel = await client.channels.fetch(
+            process.env.CHANNEL_ID
+        );
 
         await channel.send(
             `<@&${process.env.ROLE_ID}> ${text}`
         );
 
     } catch (err) {
-
         console.error(err);
-
     }
 }
 
@@ -43,16 +38,13 @@ function scheduleReminder(offsetMinutes, text) {
             offsetMinutes * 60 * 1000;
 
         while (next <= Date.now()) {
-
             next += INTERVAL;
-
         }
 
-        const delay =
-            next - Date.now();
+        const delay = next - Date.now();
 
         console.log(
-            `${text} -> ${new Date(next)}`
+            `${text} -> ${new Date(next).toLocaleString()}`
         );
 
         setTimeout(async () => {
@@ -73,14 +65,30 @@ client.once("ready", () => {
         `Zalogowano jako ${client.user.tag}`
     );
 
+    // 10 minut przed
     scheduleReminder(
         10,
         "🔔 EVENT Wendigo na Płaskowyżu za 10 minut!"
     );
 
+    // 5 minut przed
     scheduleReminder(
         5,
-        "⚠️ Wendigo na Płaskowyżu za 5 minut!"
+        "⚠️ EVENT Wendigo na Płaskowyżu za 5 minut!"
+    );
+
+    // START
+    scheduleReminder(
+        0,
+        "⚔️ START WENDIGO!"
+    );
+
+    // 5 minut do końca
+    // Event trwa około 16 minut,
+    // więc wysyłamy 11 minut po starcie
+    scheduleReminder(
+        -11,
+        "⏳ Do końca Wendigo zostało około 5 minut!"
     );
 
 });
