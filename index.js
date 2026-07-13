@@ -14,10 +14,14 @@ const FIRST_EVENT = new Date(
     "2026-07-13T12:01:00+02:00"
 ).getTime();
 
+console.log("=================================");
+console.log("FIRST_EVENT:", new Date(FIRST_EVENT).toString());
+console.log("TIMESTAMP:", FIRST_EVENT);
+console.log("TERAZ:", new Date().toString());
+console.log("=================================");
+
 async function sendMessage(text) {
-
     try {
-
         const channel =
             await client.channels.fetch(
                 process.env.CHANNEL_ID
@@ -28,14 +32,11 @@ async function sendMessage(text) {
         );
 
     } catch (err) {
-
         console.error(err);
-
     }
 }
 
 async function cleanChannel() {
-
     try {
 
         const channel =
@@ -69,9 +70,7 @@ async function cleanChannel() {
 
         } while (fetched.size >= 100);
 
-        console.log(
-            "Kanał wyczyszczony"
-        );
+        console.log("Kanał wyczyszczony");
 
     } catch (err) {
 
@@ -96,26 +95,26 @@ function scheduleReminder(
         while (
             next <= Date.now()
         ) {
-
             next += INTERVAL;
-
         }
 
         const delay =
             next - Date.now();
 
         console.log(
-            `${text} -> ${new Date(
-                next
-            ).toLocaleString()}`
+            `${text} -> ${new Date(next).toLocaleString(
+                "pl-PL",
+                {
+                    timeZone: "Europe/Zurich",
+                    hour12: false
+                }
+            )}`
         );
 
         setTimeout(
             async () => {
 
-                await sendMessage(
-                    text
-                );
+                await sendMessage(text);
 
                 scheduleNext();
 
@@ -131,10 +130,6 @@ function scheduleCleanup() {
 
     function scheduleNext() {
 
-        // Event trwa około 16 min
-        // +15 min po końcu
-        // = 31 min po starcie
-
         let next =
             FIRST_EVENT +
             31 *
@@ -144,18 +139,20 @@ function scheduleCleanup() {
         while (
             next <= Date.now()
         ) {
-
             next += INTERVAL;
-
         }
 
         const delay =
             next - Date.now();
 
         console.log(
-            `Czyszczenie kanału -> ${new Date(
-                next
-            ).toLocaleString()}`
+            `Czyszczenie kanału -> ${new Date(next).toLocaleString(
+                "pl-PL",
+                {
+                    timeZone: "Europe/Zurich",
+                    hour12: false
+                }
+            )}`
         );
 
         setTimeout(
@@ -173,51 +170,35 @@ function scheduleCleanup() {
     scheduleNext();
 }
 
-client.once(
-    "ready",
-    () => {
+client.once("ready", () => {
 
-        console.log(
-            `Zalogowano jako ${client.user.tag}`
-        );
+    console.log(
+        `Zalogowano jako ${client.user.tag}`
+    );
 
-        // 10 minut przed
+    scheduleReminder(
+        10,
+        "🔔 EVENT Wendigo na Płaskowyżu za 10 minut!"
+    );
 
-        scheduleReminder(
-            10,
-            "🔔 EVENT Wendigo na Płaskowyżu za 10 minut!"
-        );
+    scheduleReminder(
+        5,
+        "⚠️ EVENT Wendigo na Płaskowyżu za 5 minut!"
+    );
 
-        // 5 minut przed
+    scheduleReminder(
+        0,
+        "⚔️ START WENDIGO!"
+    );
 
-        scheduleReminder(
-            5,
-            "⚠️ EVENT Wendigo na Płaskowyżu za 5 minut!"
-        );
+    scheduleReminder(
+        -11,
+        "⏳ Do końca Wendigo zostało około 5 minut!"
+    );
 
-        // START
+    scheduleCleanup();
 
-        scheduleReminder(
-            0,
-            "⚔️ START WENDIGO!"
-        );
-
-        // 5 minut do końca
-        // Event trwa 16 minut
-        // więc wysyłamy 11 minut po starcie
-
-        scheduleReminder(
-            -11,
-            "⏳ Do końca Wendigo zostało około 5 minut!"
-        );
-
-        // Czyszczenie kanału
-        // 15 minut po końcu
-
-        scheduleCleanup();
-
-    }
-);
+});
 
 client.login(
     process.env.TOKEN
