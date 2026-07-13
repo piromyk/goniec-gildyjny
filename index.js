@@ -11,7 +11,7 @@ const INTERVAL = ((5 * 60) + 34) * 60 * 1000;
 
 // Najbliższy znany start Wendigo
 const FIRST_EVENT = new Date(
-    "2026-07-12T00:51:00+02:00"
+    "2026-07-13T12:01:00+02:00"
 ).getTime();
 
 async function sendMessage(text) {
