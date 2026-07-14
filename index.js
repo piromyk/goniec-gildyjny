@@ -1,27 +1,56 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits } = require("discord.js");
+const fs = require("fs");
+
+const {
+    Client,
+    GatewayIntentBits,
+    PermissionsBitField
+} = require("discord.js");
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
 });
 
 // 5h 34m
 const INTERVAL = ((5 * 60) + 34) * 60 * 1000;
 
-// Najbliższy znany start Wendigo
-const FIRST_EVENT = new Date(
-    "2026-07-13T12:01:00+02:00"
-).getTime();
+let timers = [];
 
-console.log("=================================");
-console.log("FIRST_EVENT:", new Date(FIRST_EVENT).toString());
-console.log("TIMESTAMP:", FIRST_EVENT);
-console.log("TERAZ:", new Date().toString());
-console.log("=================================");
+function loadConfig() {
+    return JSON.parse(
+        fs.readFileSync(
+            "./config.json",
+            "utf8"
+        )
+    );
+}
+
+function saveConfig(config) {
+    fs.writeFileSync(
+        "./config.json",
+        JSON.stringify(
+            config,
+            null,
+            2
+        )
+    );
+}
+
+function getFirstEvent() {
+    return new Date(
+        loadConfig().nextEvent
+    ).getTime();
+}
 
 async function sendMessage(text) {
+
     try {
+
         const channel =
             await client.channels.fetch(
                 process.env.CHANNEL_ID
@@ -32,11 +61,14 @@ async function sendMessage(text) {
         );
 
     } catch (err) {
+
         console.error(err);
+
     }
 }
 
 async function cleanChannel() {
+
     try {
 
         const channel =
@@ -70,13 +102,24 @@ async function cleanChannel() {
 
         } while (fetched.size >= 100);
 
-        console.log("Kanał wyczyszczony");
+        console.log(
+            "Kanał wyczyszczony"
+        );
 
     } catch (err) {
 
         console.error(err);
 
     }
+}
+
+function clearAllTimers() {
+
+    for (const timer of timers) {
+        clearTimeout(timer);
+    }
+
+    timers = [];
 }
 
 function scheduleReminder(
@@ -87,7 +130,7 @@ function scheduleReminder(
     function scheduleNext() {
 
         let next =
-            FIRST_EVENT -
+            getFirstEvent() -
             offsetMinutes *
             60 *
             1000;
@@ -97,9 +140,6 @@ function scheduleReminder(
         ) {
             next += INTERVAL;
         }
-
-        const delay =
-            next - Date.now();
 
         console.log(
             `${text} -> ${new Date(next).toLocaleString(
@@ -111,16 +151,21 @@ function scheduleReminder(
             )}`
         );
 
-        setTimeout(
-            async () => {
+        const timer =
+            setTimeout(
+                async () => {
 
-                await sendMessage(text);
+                    await sendMessage(
+                        text
+                    );
 
-                scheduleNext();
+                    scheduleNext();
 
-            },
-            delay
-        );
+                },
+                next - Date.now()
+            );
+
+        timers.push(timer);
     }
 
     scheduleNext();
@@ -131,7 +176,7 @@ function scheduleCleanup() {
     function scheduleNext() {
 
         let next =
-            FIRST_EVENT +
+            getFirstEvent() +
             31 *
             60 *
             1000;
@@ -141,9 +186,6 @@ function scheduleCleanup() {
         ) {
             next += INTERVAL;
         }
-
-        const delay =
-            next - Date.now();
 
         console.log(
             `Czyszczenie kanału -> ${new Date(next).toLocaleString(
@@ -155,26 +197,27 @@ function scheduleCleanup() {
             )}`
         );
 
-        setTimeout(
-            async () => {
+        const timer =
+            setTimeout(
+                async () => {
 
-                await cleanChannel();
+                    await cleanChannel();
 
-                scheduleNext();
+                    scheduleNext();
 
-            },
-            delay
-        );
+                },
+                next - Date.now()
+            );
+
+        timers.push(timer);
     }
 
     scheduleNext();
 }
 
-client.once("ready", () => {
+function startSchedules() {
 
-    console.log(
-        `Zalogowano jako ${client.user.tag}`
-    );
+    clearAllTimers();
 
     scheduleReminder(
         10,
@@ -197,8 +240,120 @@ client.once("ready", () => {
     );
 
     scheduleCleanup();
+}
 
-});
+client.once(
+    "ready",
+    () => {
+
+        console.log(
+            `Zalogowano jako ${client.user.tag}`
+        );
+
+        startSchedules();
+
+    }
+);
+
+client.on(
+    "messageCreate",
+    async message => {
+
+        if (message.author.bot) {
+            return;
+        }
+
+        if (
+            message.content === "!next"
+        ) {
+
+            const config =
+                loadConfig();
+
+            return message.reply(
+                `Następny Wendigo: ${new Date(
+                    config.nextEvent
+                ).toLocaleString(
+                    "pl-PL",
+                    {
+                        timeZone:
+                            "Europe/Zurich"
+                    }
+                )}`
+            );
+        }
+
+        if (
+            message.content.startsWith(
+                "!wendigo "
+            )
+        ) {
+
+            if (
+                !message.member.permissions.has(
+                    PermissionsBitField.Flags.Administrator
+                )
+            ) {
+
+                return message.reply(
+                    "Brak uprawnień."
+                );
+            }
+
+            const time =
+                message.content
+                    .split(" ")[1];
+
+            const match =
+                /^(\d{1,2}):(\d{2})$/
+                    .exec(time);
+
+            if (!match) {
+
+                return message.reply(
+                    "Użyj: !wendigo HH:MM"
+                );
+            }
+
+            const now =
+                new Date();
+
+            const year =
+                now.getFullYear();
+
+            const month =
+                String(
+                    now.getMonth() + 1
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+            const day =
+                String(
+                    now.getDate()
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+            const newDate =
+                `${year}-${month}-${day}T${match[1]}:${match[2]}:00+02:00`;
+
+            saveConfig({
+                nextEvent:
+                    newDate
+            });
+
+            startSchedules();
+
+            return message.reply(
+                `Nowy spawn ustawiony na ${time}`
+            );
+        }
+
+    }
+);
 
 client.login(
     process.env.TOKEN
