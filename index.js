@@ -16,7 +16,7 @@ const client = new Client({
     ]
 });
 
-// 5h 34m
+// 5h 37m
 const INTERVAL = ((5 * 60) + 37) * 60 * 1000;
 
 let timers = [];
@@ -56,11 +56,24 @@ async function sendMessage(text) {
                 process.env.CHANNEL_ID
             );
 
-        await channel.send(
-            `<@&${process.env.ROLE_ID}> ${text}`
+        console.log(
+            `[${new Date().toLocaleString("pl-PL")}] PRÓBA WYSŁANIA: ${text}`
+        );
+
+        const msg =
+            await channel.send(
+                `<@&${process.env.ROLE_ID}> ${text}`
+            );
+
+        console.log(
+            `[${new Date().toLocaleString("pl-PL")}] WYSŁANO OK | ID: ${msg.id}`
         );
 
     } catch (err) {
+
+        console.error(
+            `[${new Date().toLocaleString("pl-PL")}] BŁĄD WYSYŁANIA: ${text}`
+        );
 
         console.error(err);
 
@@ -96,14 +109,19 @@ async function cleanChannel() {
 
                 await msg
                     .delete()
-                    .catch(() => {});
+                    .catch(err => {
+                        console.error(
+                            "Błąd usuwania wiadomości:",
+                            err
+                        );
+                    });
 
             }
 
         } while (fetched.size >= 100);
 
         console.log(
-            "Kanał wyczyszczony"
+            `[${new Date().toLocaleString("pl-PL")}] Kanał wyczyszczony`
         );
 
     } catch (err) {
@@ -155,6 +173,10 @@ function scheduleReminder(
             setTimeout(
                 async () => {
 
+                    console.log(
+                        `[${new Date().toLocaleString("pl-PL")}] TIMER URUCHOMIONY: ${text}`
+                    );
+
                     await sendMessage(
                         text
                     );
@@ -200,6 +222,10 @@ function scheduleCleanup() {
         const timer =
             setTimeout(
                 async () => {
+
+                    console.log(
+                        `[${new Date().toLocaleString("pl-PL")}] START CZYSZCZENIA KANAŁU`
+                    );
 
                     await cleanChannel();
 
