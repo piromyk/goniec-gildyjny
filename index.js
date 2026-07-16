@@ -17,7 +17,7 @@ const client = new Client({
 });
 
 // 5h 34m
-const INTERVAL = ((5 * 60) + 34) * 60 * 1000;
+const INTERVAL = ((5 * 60) + 37) * 60 * 1000;
 
 let timers = [];
 
@@ -221,17 +221,22 @@ function startSchedules() {
 
     scheduleReminder(
         10,
-        "🔔 EVENT Wendigo na Płaskowyżu za 10 minut!"
+        "🔔 EVENT Wendigo na Płaskowyżu za około 10 minut!"
     );
 
     scheduleReminder(
         5,
-        "⚠️ EVENT Wendigo na Płaskowyżu za 5 minut!"
+        "⚠️ EVENT Wendigo na Płaskowyżu za około 5 minut!"
     );
 
     scheduleReminder(
         0,
         "⚔️ START WENDIGO!"
+    );
+
+    scheduleReminder(
+        -7,
+        "🚨 OSTATNI DZWONEK! Jeżeli jeszcze nie jesteś na Wendigo, to ostatni moment żeby zdążyć!"
     );
 
     scheduleReminder(
@@ -267,17 +272,24 @@ client.on(
             message.content === "!next"
         ) {
 
-            const config =
-                loadConfig();
+            let next =
+                getFirstEvent();
+
+            while (
+                next <= Date.now()
+            ) {
+                next += INTERVAL;
+            }
 
             return message.reply(
                 `Następny Wendigo: ${new Date(
-                    config.nextEvent
+                    next
                 ).toLocaleString(
                     "pl-PL",
                     {
                         timeZone:
-                            "Europe/Zurich"
+                            "Europe/Zurich",
+                        hour12: false
                     }
                 )}`
             );
@@ -348,7 +360,7 @@ client.on(
             startSchedules();
 
             return message.reply(
-                `Nowy spawn ustawiony na ${time}`
+                `✅ Nowy spawn ustawiony na ${time}`
             );
         }
 
