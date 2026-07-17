@@ -16,8 +16,8 @@ const client = new Client({
     ]
 });
 
-// 5h 37m
-const INTERVAL = ((5 * 60) + 37) * 60 * 1000;
+// 5h 34m
+const INTERVAL = ((5 * 60) + 34) * 60 * 1000;
 
 let timers = [];
 
@@ -109,12 +109,7 @@ async function cleanChannel() {
 
                 await msg
                     .delete()
-                    .catch(err => {
-                        console.error(
-                            "Błąd usuwania wiadomości:",
-                            err
-                        );
-                    });
+                    .catch(() => {});
 
             }
 
@@ -245,29 +240,22 @@ function startSchedules() {
 
     clearAllTimers();
 
+    // 10 minut przed
     scheduleReminder(
         10,
         "🔔 EVENT Wendigo na Płaskowyżu za około 10 minut!"
     );
 
-    scheduleReminder(
-        5,
-        "⚠️ EVENT Wendigo na Płaskowyżu za około 5 minut!"
-    );
-
+    // START
     scheduleReminder(
         0,
         "⚔️ START WENDIGO!"
     );
 
+    // 7 minut po starcie
     scheduleReminder(
         -7,
         "🚨 OSTATNI DZWONEK! Jeżeli jeszcze nie jesteś na Wendigo, to ostatni moment żeby zdążyć!"
-    );
-
-    scheduleReminder(
-        -11,
-        "⏳ Do końca Wendigo zostało około 5 minut!"
     );
 
     scheduleCleanup();
